@@ -1,50 +1,58 @@
-from flask import render_template
 from flask_appbuilder.models.sqla.interface import SQLAInterface
-from flask_appbuilder import ModelView, ModelRestApi
+from flask_appbuilder.views import ModelView
+from flask_appbuilder.widgets import ListBlock, ShowBlockWidget
 
 from . import appbuilder, db
+from .models import Product, ProductType, Rodic, Dyte
 
-"""
-    Create your Model based REST API::
+class ProductPubRodic(ModelView):
+    datamodel = SQLAInterface(Rodic)
 
-    class MyModelApi(ModelRestApi):
-        datamodel = SQLAInterface(MyModel)
-
-    appbuilder.add_api(MyModelApi)
-
-
-    Create your Views::
+class ProductPubDyte(ModelView):
+    datamodel = SQLAInterface(Dyte)
+    list_widget = ListBlock
+    show_widget = ShowBlockWidget
 
 
-    class MyModelView(ModelView):
-        datamodel = SQLAInterface(MyModel)
+class ProductPubView(ModelView):
+    datamodel = SQLAInterface(Product)
+    base_permissions = ["can_list", "can_show"]
+    list_widget = ListBlock
+    show_widget = ShowBlockWidget
+
+    label_columns = {"photo_img": "Photo"}
+
+    list_columns = ["name", "photo_img", "price_label"]
+    search_columns = ["name", "price", "product_type"]
+
+    show_fieldsets = [
+        ("Summary", {"fields": ["name", "price_label", "photo_img", "product_type"]}),
+        ("Description", {"fields": ["description"], "expanded": True}),
+    ]
 
 
-    Next, register your Views::
+class ProductView(ModelView):
+    datamodel = SQLAInterface(Product)
 
 
-    appbuilder.add_view(
-        MyModelView,
-        "My View",
-        icon="fa-folder-open-o",
-        category="My Category",
-        category_icon='fa-envelope'
-    )
-"""
-
-"""
-    Application wide 404 error handler
-"""
-
-
-@appbuilder.app.errorhandler(404)
-def page_not_found(e):
-    return (
-        render_template(
-            "404.html", base_template=appbuilder.base_template, appbuilder=appbuilder
-        ),
-        404,
-    )
+class ProductTypeView(ModelView):
+    datamodel = SQLAInterface(ProductType)
+    related_views = [ProductView]
 
 
 db.create_all()
+appbuilder.add_view(ProductPubView, "Our Products", icon="fa-folder-open-o")
+appbuilder.add_view(
+    ProductView, "List Products", icon="fa-folder-open-o", category="Management"
+)
+appbuilder.add_separator("Management")
+appbuilder.add_view(
+    ProductTypeView, "List Product Types", icon="fa-envelope", category="Management"
+)
+appbuilder.add_separator("Management")
+appbuilder.add_view(
+    ProductPubRodic, "List rodicu", icon="fa-envelope", category="Management"
+)
+appbuilder.add_view(
+    ProductPubDyte, "List dety", icon="fa-envelope", category="Management"
+)
